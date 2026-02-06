@@ -1,0 +1,44 @@
+{
+    "018490": {
+        "fund_key": "20230603000230030000000000186754",
+        "fund_name": "万家中证工业有色金属主题ETF联接C",
+        "is_hold": true,
+        "shares": 0,
+        "cost_price": 0.0,
+        "hold_amount": 13380.168992646375,
+        "temp_amount": 13380.168992646375,
+        "hold_date": "2026-02-05",
+        "profit_loss": "-563.31",
+        "current_net_value": 1.917
+    },
+    "025209": {
+        "fund_key": "20250829000230030000000011113975",
+        "fund_name": "永赢先锋半导体智选混合C",
+        "is_hold": true,
+        "shares": 0,
+        "cost_price": 1.2345,
+        "hold_amount": 7173.318692988249,
+        "temp_amount": 7173.318692988249,
+        "hold_date": "2026-02-05",
+        "profit_loss": "-188.66",
+        "current_net_value": 1.655
+    },
+    "022853": {
+        "fund_key": "20241214000230030000000011111149",
+        "fund_name": "中航优选领航混合C",
+        "is_hold": true,
+        "shares": 0,
+        "cost_price": 0.0,
+        "hold_amount": 13069.492314365374,
+        "temp_amount": 13069.492314365374,
+        "hold_date": "2026-02-05",
+        "profit_loss": "-107.17",
+        "current_net_value": 1.6503
+    },
+    "total_hold_amount": 33622.979999999996,
+    "temp_hold_amount": 33556.240000000005,
+    "total_profit_loss": -859.1399999999999,
+    "total_valuation": 32763.839999999997,
+    "total_profit_loss_rate": -2.555216700006959,
+    "last_update_date": "2026-02-05"
+}

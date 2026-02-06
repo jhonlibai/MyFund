@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金助手</title>
+    <!-- 引入Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 引入Axios -->
+    <script src="https://unpkg.com/axios@1/dist/axios.min.js"></script>
+    <!-- 引入Element Plus -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2/dist/index.css">
+    <script src="https://unpkg.com/element-plus@2/dist/index.full.js"></script>
+    <!-- 引入ECharts -->
+    <script src="https://unpkg.com/echarts@5/dist/echarts.min.js"></script>
+    <!-- 自定义样式 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f7fa;
+            color: #303133;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background-color: #409EFF;
+            color: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .tabs {
+            margin-bottom: 20px;
+        }
+        
+        .fund-table {
+            margin-top: 20px;
+        }
+        
+        .total-info {
+            background-color: #ecf5ff;
+            border: 1px solid #d9ecff;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .total-info .el-row {
+            margin-bottom: 10px;
+        }
+        
+        .total-info .el-col {
+            text-align: center;
+        }
+        
+        .total-info .label {
+            font-size: 14px;
+            color: #606266;
+            margin-bottom: 5px;
+        }
+        
+        .total-info .value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .profit-positive {
+            color: #F56C6C;
+        }
+        
+        .profit-negative {
+            color: #67C23A;
+        }
+        
+        .fund-form {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .fund-form .el-form-item {
+            margin-right: 20px;
+        }
+        
+        .chart-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #303133;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .sector-tags {
+            margin: 20px 0;
+        }
+        
+        .sector-tags h4 {
+            margin: 15px 0 10px 0;
+            font-size: 14px;
+            color: #606266;
+        }
+        
+        .tags-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .sector-tag {
+            padding: 5px 12px;
+            background-color: #f0f2f5;
+            border-radius: 15px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .sector-tag:hover {
+            background-color: #ecf5ff;
+            color: #409EFF;
+        }
+        
+        .sector-tag.active {
+            background-color: #409EFF;
+            color: white;
+        }
+        
+        .no-selection {
+            text-align: center;
+            padding: 40px;
+            color: #909399;
+            background-color: #fafafa;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .fund-table h3 {
+            margin: 20px 0;
+            font-size: 16px;
+            color: #303133;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>基金助手</h1>
+            </div>
+            
+            <el-tabs v-model="activeTab" class="tabs">
+                <el-tab-pane label="7*24快讯" name="news">
+                    <div class="chart-container">
+                        <div class="chart-title">7*24快讯</div>
+                        <el-table :data="newsList" style="width: 100%">
+                            <el-table-column prop="time" label="时间" width="100"></el-table-column>
+                            <el-table-column prop="content" label="快讯内容"></el-table-column>
+                        </el-table>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="全球指数" name="indices">
+                    <div class="chart-container">
+                        <div class="chart-title">全球指数</div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #e0e0e0;">
+                                    <th style="padding: 10px; text-align: left;">指数名称</th>
+                                    <th style="padding: 10px; text-align: right;">指数</th>
+                                    <th style="padding: 10px; text-align: right;">涨跌幅</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">上证指数</td>
+                                    <td style="padding: 10px; text-align: right;">4025.35</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+0.24%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">深证指数</td>
+                                    <td style="padding: 10px; text-align: right;">13938.09</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+0.62%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">创业板指</td>
+                                    <td style="padding: 10px; text-align: right;">3285.58</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+0.66%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">恒生指数</td>
+                                    <td style="padding: 10px; text-align: right;">26422.42</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-negative">-0.12%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">富时中国A50</td>
+                                    <td style="padding: 10px; text-align: right;">14640.49</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-negative">-0.08%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">日经指数</td>
+                                    <td style="padding: 10px; text-align: right;">54201.01</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+2.94%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">韩国首尔综合指数</td>
+                                    <td style="padding: 10px; text-align: right;">5195.56</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+4.97%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">纳斯达克</td>
+                                    <td style="padding: 10px; text-align: right;">25992.11</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+0.05%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">道琼斯</td>
+                                    <td style="padding: 10px; text-align: right;">49407.66</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+1.05%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">标普500</td>
+                                    <td style="padding: 10px; text-align: right;">6976.44</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+0.54%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">富时加拿大指数</td>
+                                    <td style="padding: 10px; text-align: right;">1298.34</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+0.53%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">富时巴西指数</td>
+                                    <td style="padding: 10px; text-align: right;">209999.49</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-negative">-2.54%</span>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">富时巴基斯坦指数</td>
+                                    <td style="padding: 10px; text-align: right;">4608.27</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span class="profit-positive">+0.68%</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="实时贵金属" name="realTimeGold">
+                    <div class="chart-container">
+                        <div class="chart-title">实时贵金属</div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #e0e0e0;">
+                                    <th style="padding: 10px; text-align: left;">名称</th>
+                                    <th style="padding: 10px; text-align: right;">最新价</th>
+                                    <th style="padding: 10px; text-align: right;">涨跌额</th>
+                                    <th style="padding: 10px; text-align: right;">涨跌幅</th>
+                                    <th style="padding: 10px; text-align: right;">开盘价</th>
+                                    <th style="padding: 10px; text-align: right;">最高价</th>
+                                    <th style="padding: 10px; text-align: right;">最低价</th>
+                                    <th style="padding: 10px; text-align: right;">昨收价</th>
+                                    <th style="padding: 10px; text-align: right;">更新时间</th>
+                                    <th style="padding: 10px; text-align: right;">单位</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, index) in realTimeGoldData" :key="index" style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">{{ item.name }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.price }}</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span :class="item.change && !item.change.toString().includes('-') ? 'profit-positive' : 'profit-negative'">{{ item.change }}</span>
+                                    </td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span :class="item.change_rate && !item.change_rate.toString().includes('-') ? 'profit-positive' : 'profit-negative'">{{ item.change_rate }}</span>
+                                    </td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.open }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.high }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.low }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.prev_close }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.update_time }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.unit }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="历史金价" name="goldHistory">
+                    <div class="chart-container">
+                        <div class="chart-title">历史金价</div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #e0e0e0;">
+                                    <th style="padding: 10px; text-align: left;">日期</th>
+                                    <th style="padding: 10px; text-align: right;">中国黄金基金金价</th>
+                                    <th style="padding: 10px; text-align: right;">周大福金价</th>
+                                    <th style="padding: 10px; text-align: right;">中国黄金基金金价涨跌</th>
+                                    <th style="padding: 10px; text-align: right;">周大福金价涨跌</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #f0f0f0;" v-for="item in goldHistoryData" :key="item.date">
+                                    <td style="padding: 10px;">{{ item.date }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.chinaGoldFundPrice }}</td>
+                                    <td style="padding: 10px; text-align: right;">{{ item.chowTaiFookPrice }}</td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span :class="item.chinaGoldFundChange >= 0 ? 'profit-positive' : 'profit-negative'">
+                                            {{ item.chinaGoldFundChange >= 0 ? '+' : '' }}{{ item.chinaGoldFundChange }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 10px; text-align: right;">
+                                        <span :class="item.chowTaiFookChange >= 0 ? 'profit-positive' : 'profit-negative'">
+                                            {{ item.chowTaiFookChange >= 0 ? '+' : '' }}{{ item.chowTaiFookChange }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="成交量趋势" name="volumeTrend">
+                    <div class="chart-container">
+                        <div class="chart-title">成交量趋势</div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #e0e0e0;">
+                                    <th style="padding: 10px; text-align: left;">日期</th>
+                                    <th style="padding: 10px; text-align: right;">总成交额</th>
+                                    <th style="padding: 10px; text-align: right;">上交所</th>
+                                    <th style="padding: 10px; text-align: right;">深交所</th>
+                                    <th style="padding: 10px; text-align: right;">北交所</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">2026-02-03</td>
+                                    <td style="padding: 10px; text-align: right;">15943.39亿</td>
+                                    <td style="padding: 10px; text-align: right;">6695.86亿</td>
+                                    <td style="padding: 10px; text-align: right;">8724.81亿</td>
+                                    <td style="padding: 10px; text-align: right;">122.71亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">2026-02-02</td>
+                                    <td style="padding: 10px; text-align: right;">20666.40亿</td>
+                                    <td style="padding: 10px; text-align: right;">11633.56亿</td>
+                                    <td style="padding: 10px; text-align: right;">8421.33亿</td>
+                                    <td style="padding: 10px; text-align: right;">221.57亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">2026-01-30</td>
+                                    <td style="padding: 10px; text-align: right;">28824.25亿</td>
+                                    <td style="padding: 10px; text-align: right;">12896.33亿</td>
+                                    <td style="padding: 10px; text-align: right;">15655.88亿</td>
+                                    <td style="padding: 10px; text-align: right;">272.11亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">2026-01-29</td>
+                                    <td style="padding: 10px; text-align: right;">32594.29亿</td>
+                                    <td style="padding: 10px; text-align: right;">14486.02亿</td>
+                                    <td style="padding: 10px; text-align: right;">17441.13亿</td>
+                                    <td style="padding: 10px; text-align: right;">267.14亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">2026-01-28</td>
+                                    <td style="padding: 10px; text-align: right;">29922.39亿</td>
+                                    <td style="padding: 10px; text-align: right;">13552.80亿</td>
+                                    <td style="padding: 10px; text-align: right;">15908.68亿</td>
+                                    <td style="padding: 10px; text-align: right;">272.89亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">2026-01-27</td>
+                                    <td style="padding: 10px; text-align: right;">29214.73亿</td>
+                                    <td style="padding: 10px; text-align: right;">12892.40亿</td>
+                                    <td style="padding: 10px; text-align: right;">16084.88亿</td>
+                                    <td style="padding: 10px; text-align: right;">267.45亿</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="上证分时" name="shanghaiIndex">
+                    <div class="chart-container">
+                        <div class="chart-title">上证分时</div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #e0e0e0;">
+                                    <th style="padding: 10px; text-align: left;">时间</th>
+                                    <th style="padding: 10px; text-align: right;">指数</th>
+                                    <th style="padding: 10px; text-align: right;">涨跌额</th>
+                                    <th style="padding: 10px; text-align: right;">涨跌幅</th>
+                                    <th style="padding: 10px; text-align: right;">成交量</th>
+                                    <th style="padding: 10px; text-align: right;">成交额</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:07</td>
+                                    <td style="padding: 10px; text-align: right;">4020.47</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+4.72</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.12%</span></td>
+                                    <td style="padding: 10px; text-align: right;">12835.37万手</td>
+                                    <td style="padding: 10px; text-align: right;">21.98亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:08</td>
+                                    <td style="padding: 10px; text-align: right;">4020.17</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+4.42</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.11%</span></td>
+                                    <td style="padding: 10px; text-align: right;">11621.5万手</td>
+                                    <td style="padding: 10px; text-align: right;">21.88亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:09</td>
+                                    <td style="padding: 10px; text-align: right;">4020.11</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+4.36</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.11%</span></td>
+                                    <td style="padding: 10px; text-align: right;">13669.52万手</td>
+                                    <td style="padding: 10px; text-align: right;">24.16亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:10</td>
+                                    <td style="padding: 10px; text-align: right;">4016.95</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+1.20</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.03%</span></td>
+                                    <td style="padding: 10px; text-align: right;">16172.05万手</td>
+                                    <td style="padding: 10px; text-align: right;">27.37亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:11</td>
+                                    <td style="padding: 10px; text-align: right;">4016.98</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+1.23</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.03%</span></td>
+                                    <td style="padding: 10px; text-align: right;">12826.0万手</td>
+                                    <td style="padding: 10px; text-align: right;">25.28亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:12</td>
+                                    <td style="padding: 10px; text-align: right;">4016.21</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.46</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.01%</span></td>
+                                    <td style="padding: 10px; text-align: right;">16105.28万手</td>
+                                    <td style="padding: 10px; text-align: right;">26.34亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:13</td>
+                                    <td style="padding: 10px; text-align: right;">4015.77</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.02</span></td>
+                                    <td style="padding: 10px; text-align: right;">0.00%</td>
+                                    <td style="padding: 10px; text-align: right;">11432.16万手</td>
+                                    <td style="padding: 10px; text-align: right;">21.46亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:14</td>
+                                    <td style="padding: 10px; text-align: right;">4016.81</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+1.06</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.03%</span></td>
+                                    <td style="padding: 10px; text-align: right;">14586.96万手</td>
+                                    <td style="padding: 10px; text-align: right;">26.35亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:15</td>
+                                    <td style="padding: 10px; text-align: right;">4016.54</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.79</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.02%</span></td>
+                                    <td style="padding: 10px; text-align: right;">13197.88万手</td>
+                                    <td style="padding: 10px; text-align: right;">26.2亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:16</td>
+                                    <td style="padding: 10px; text-align: right;">4016.22</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.47</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.01%</span></td>
+                                    <td style="padding: 10px; text-align: right;">16516.98万手</td>
+                                    <td style="padding: 10px; text-align: right;">31.4亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:17</td>
+                                    <td style="padding: 10px; text-align: right;">4017.05</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+1.30</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.03%</span></td>
+                                    <td style="padding: 10px; text-align: right;">15753.94万手</td>
+                                    <td style="padding: 10px; text-align: right;">28.97亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:18</td>
+                                    <td style="padding: 10px; text-align: right;">4020.08</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+4.33</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.11%</span></td>
+                                    <td style="padding: 10px; text-align: right;">16944.01万手</td>
+                                    <td style="padding: 10px; text-align: right;">28.87亿</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 10px;">02-03 11:19</td>
+                                    <td style="padding: 10px; text-align: right;">4023.27</td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+7.52</span></td>
+                                    <td style="padding: 10px; text-align: right;"><span class="profit-positive">+0.19%</span></td>
+                                    <td style="padding: 10px; text-align: right;">23212.28万手</td>
+                                    <td style="padding: 10px; text-align: right;">33.43亿</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="自选基金" name="funds">
+                    <!-- 基金表格 -->
+                    <div class="fund-form">
+                        <el-form :inline="true" :model="fundForm" class="demo-form-inline">
+                            <el-form-item label="基金代码">
+                                <el-input v-model="fundForm.fundCode" placeholder="请输入基金代码"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="addFund">添加基金</el-button>
+                            </el-form-item>
+                            <el-form-item label="持有金额">
+                                <el-input v-model="fundForm.holdAmount" type="number" placeholder="请输入持有金额"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="success" @click="setHoldAmount">设置持有金额</el-button>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="refreshFundList">刷新</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                    
+                    <!-- 总持仓信息 -->
+                    <div class="total-info" v-if="totalInfo">
+                        <el-row :gutter="20">
+                            <el-col :span="6">
+                                <div class="label">总持仓</div>
+                                <div class="value">{{ totalInfo.total_hold_amount.toFixed(2) }}元</div>
+                            </el-col>
+                            <el-col :span="6">
+                                <div class="label">总盈亏</div>
+                                <div class="value" :class="totalInfo.total_profit_loss >= 0 ? 'profit-positive' : 'profit-negative'">
+                                    {{ totalInfo.total_profit_loss >= 0 ? '+' : '' }}{{ totalInfo.total_profit_loss.toFixed(2) }}元
+                                </div>
+                            </el-col>
+                            <el-col :span="6">
+                                <div class="label">总估值</div>
+                                <div class="value">{{ totalInfo.total_valuation.toFixed(2) }}元</div>
+                            </el-col>
+                            <el-col :span="6">
+                                <div class="label">盈亏率</div>
+                                <div class="value" :class="totalInfo.total_profit_loss_rate >= 0 ? 'profit-positive' : 'profit-negative'">
+                                    {{ totalInfo.total_profit_loss_rate >= 0 ? '+' : '' }}{{ totalInfo.total_profit_loss_rate.toFixed(2) }}%
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
+                    
+                    <!-- 基金列表 -->
+                    <div class="fund-table">
+                        <el-table :data="currentFundsList" style="width: 100%" v-loading="loading">
+                            <el-table-column prop="fund_code" label="基金代码" width="100"></el-table-column>
+                            <el-table-column prop="fund_name" label="基金名称" min-width="150"></el-table-column>
+                            <el-table-column prop="now_time" label="估值时间" width="100"></el-table-column>
+                            <el-table-column prop="forecast_growth" label="估值涨跌幅" width="120">
+                                <template #default="scope">
+                                    <span :class="scope.row.forecast_growth && !scope.row.forecast_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.forecast_growth }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="day_of_growth" label="昨日涨幅" width="100">
+                                <template #default="scope">
+                                    <span :class="scope.row.day_of_growth && !scope.row.day_of_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.day_of_growth }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="current_net_value" label="当前净值" width="100">
+                                <template #default="scope">
+                                    {{ scope.row.current_net_value || '0.00' }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="hold_amount" label="持有" width="100">
+                                <template #default="scope">
+                                    {{ scope.row.hold_amount ? scope.row.hold_amount.toFixed(2) : '0.00' }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="profit_loss" label="盈亏" width="100">
+                                <template #default="scope">
+                                    <span :class="scope.row.profit_loss && scope.row.profit_loss.startsWith('+') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.profit_loss || '0.00' }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="200">
+                                <template #default="scope">
+                                    <el-button type="primary" size="small" @click="viewFundDetail(scope.row.fund_code)" style="margin-right: 5px;">详情</el-button>
+                                    <el-button type="danger" size="small" @click="deleteFund(scope.row.fund_code)">删除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <!-- 基金分页组件 -->
+                        <div style="margin-top: 20px; text-align: right;">
+                            <el-pagination
+                                v-model:current-page="currentFundPage"
+                                v-model:page-size="fundPageSize"
+                                :page-sizes="[10, 20, 50, 100]"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                :total="totalFunds"
+                                @size-change="handleFundSizeChange"
+                                @current-change="handleFundCurrentChange"
+                            />
+                        </div>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="行业板块" name="sectors">
+                    <div class="chart-container">
+                        <div class="chart-title">行业板块</div>
+                        <el-table :data="currentSectorsList" style="width: 100%">
+                            <el-table-column prop="name" label="板块名称" min-width="120"></el-table-column>
+                            <el-table-column prop="change" label="今日涨跌幅" min-width="100" align="right">
+                                <template #default="scope">
+                                    <span :class="scope.row.change && !scope.row.change.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.change }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="mainInflow" label="今日主力净流入" min-width="140" align="right">
+                                <template #default="scope">
+                                    <span :class="scope.row.mainInflow && !scope.row.mainInflow.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.mainInflow }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="mainInflowRatio" label="今日主力净流入占比" min-width="160" align="right">
+                                <template #default="scope">
+                                    <span :class="scope.row.mainInflowRatio && !scope.row.mainInflowRatio.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.mainInflowRatio }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="smallInflow" label="今日小单净流入" min-width="140" align="right">
+                                <template #default="scope">
+                                    <span :class="scope.row.smallInflow && !scope.row.smallInflow.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.smallInflow }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="smallInflowRatio" label="今日小单净流入占比" min-width="160" align="right">
+                                <template #default="scope">
+                                    <span :class="scope.row.smallInflowRatio && !scope.row.smallInflowRatio.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                        {{ scope.row.smallInflowRatio }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <div style="margin-top: 20px; text-align: right;">
+                            <el-pagination
+                                v-model:current-page="currentPage"
+                                v-model:page-size="pageSize"
+                                :page-sizes="[10, 20, 50, 100]"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                :total="sectorsList.length"
+                                @size-change="handleSizeChange"
+                                @current-change="handleCurrentChange"
+                            />
+                        </div>
+                    </div>
+                </el-tab-pane>
+                
+                <el-tab-pane label="板块基金查询" name="sectorFunds">
+                    <div class="chart-container">
+                        <div class="chart-title">选择板块查看基金列表</div>
+                        
+                        <!-- 板块标签 -->
+                        <div class="sector-tags">
+                            <h4>科技</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('人工智能')">人工智能</span>
+                                <span class="sector-tag" @click="selectSector('半导体')">半导体</span>
+                                <span class="sector-tag" @click="selectSector('云计算')">云计算</span>
+                                <span class="sector-tag" @click="selectSector('5G')">5G</span>
+                                <span class="sector-tag" @click="selectSector('光模块')">光模块</span>
+                                <span class="sector-tag" @click="selectSector('CPO')">CPO</span>
+                                <span class="sector-tag" @click="selectSector('F5G')">F5G</span>
+                                <span class="sector-tag" @click="selectSector('通信设备')">通信设备</span>
+                                <span class="sector-tag" @click="selectSector('PCB')">PCB</span>
+                                <span class="sector-tag" @click="selectSector('消费电子')">消费电子</span>
+                                <span class="sector-tag" @click="selectSector('计算机')">计算机</span>
+                                <span class="sector-tag" @click="selectSector('软件开发')">软件开发</span>
+                                <span class="sector-tag" @click="selectSector('信创')">信创</span>
+                                <span class="sector-tag" @click="selectSector('网络安全')">网络安全</span>
+                                <span class="sector-tag" @click="selectSector('IT服务')">IT服务</span>
+                                <span class="sector-tag" @click="selectSector('国产软件')">国产软件</span>
+                                <span class="sector-tag" @click="selectSector('计算机设备')">计算机设备</span>
+                                <span class="sector-tag" @click="selectSector('光通信')">光通信</span>
+                                <span class="sector-tag" @click="selectSector('算力')">算力</span>
+                                <span class="sector-tag" @click="selectSector('脑机接口')">脑机接口</span>
+                                <span class="sector-tag" @click="selectSector('通信')">通信</span>
+                                <span class="sector-tag" @click="selectSector('电子')">电子</span>
+                                <span class="sector-tag" @click="selectSector('光学光电子')">光学光电子</span>
+                                <span class="sector-tag" @click="selectSector('元件')">元件</span>
+                                <span class="sector-tag" @click="selectSector('存储芯片')">存储芯片</span>
+                                <span class="sector-tag" @click="selectSector('第三代半导体')">第三代半导体</span>
+                                <span class="sector-tag" @click="selectSector('光刻胶')">光刻胶</span>
+                                <span class="sector-tag" @click="selectSector('电子化学品')">电子化学品</span>
+                                <span class="sector-tag" @click="selectSector('LED')">LED</span>
+                                <span class="sector-tag" @click="selectSector('毫米波')">毫米波</span>
+                                <span class="sector-tag" @click="selectSector('智能穿戴')">智能穿戴</span>
+                                <span class="sector-tag" @click="selectSector('东数西算')">东数西算</span>
+                                <span class="sector-tag" @click="selectSector('数据要素')">数据要素</span>
+                                <span class="sector-tag" @click="selectSector('国资云')">国资云</span>
+                                <span class="sector-tag" @click="selectSector('Web3.0')">Web3.0</span>
+                                <span class="sector-tag" @click="selectSector('AIGC')">AIGC</span>
+                                <span class="sector-tag" @click="selectSector('AI应用')">AI应用</span>
+                                <span class="sector-tag" @click="selectSector('AI手机')">AI手机</span>
+                                <span class="sector-tag" @click="selectSector('AI眼镜')">AI眼镜</span>
+                                <span class="sector-tag" @click="selectSector('DeepSeek')">DeepSeek</span>
+                                <span class="sector-tag" @click="selectSector('TMT')">TMT</span>
+                                <span class="sector-tag" @click="selectSector('科技')">科技</span>
+                            </div>
+                            
+                            <h4>医药健康</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('医药生物')">医药生物</span>
+                                <span class="sector-tag" @click="selectSector('医疗器械')">医疗器械</span>
+                                <span class="sector-tag" @click="selectSector('生物疫苗')">生物疫苗</span>
+                                <span class="sector-tag" @click="selectSector('CRO')">CRO</span>
+                                <span class="sector-tag" @click="selectSector('创新药')">创新药</span>
+                                <span class="sector-tag" @click="selectSector('精准医疗')">精准医疗</span>
+                                <span class="sector-tag" @click="selectSector('医疗服务')">医疗服务</span>
+                                <span class="sector-tag" @click="selectSector('中药')">中药</span>
+                                <span class="sector-tag" @click="selectSector('化学制药')">化学制药</span>
+                                <span class="sector-tag" @click="selectSector('生物制品')">生物制品</span>
+                                <span class="sector-tag" @click="selectSector('基因测序')">基因测序</span>
+                                <span class="sector-tag" @click="selectSector('超级真菌')">超级真菌</span>
+                            </div>
+                            
+                            <h4>消费</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('食品饮料')">食品饮料</span>
+                                <span class="sector-tag" @click="selectSector('白酒')">白酒</span>
+                                <span class="sector-tag" @click="selectSector('家用电器')">家用电器</span>
+                                <span class="sector-tag" @click="selectSector('纺织服饰')">纺织服饰</span>
+                                <span class="sector-tag" @click="selectSector('商贸零售')">商贸零售</span>
+                                <span class="sector-tag" @click="selectSector('新零售')">新零售</span>
+                                <span class="sector-tag" @click="selectSector('家居用品')">家居用品</span>
+                                <span class="sector-tag" @click="selectSector('文娱用品')">文娱用品</span>
+                                <span class="sector-tag" @click="selectSector('婴童')">婴童</span>
+                                <span class="sector-tag" @click="selectSector('养老产业')">养老产业</span>
+                                <span class="sector-tag" @click="selectSector('体育')">体育</span>
+                                <span class="sector-tag" @click="selectSector('教育')">教育</span>
+                                <span class="sector-tag" @click="selectSector('在线教育')">在线教育</span>
+                                <span class="sector-tag" @click="selectSector('社会服务')">社会服务</span>
+                                <span class="sector-tag" @click="selectSector('轻工制造')">轻工制造</span>
+                                <span class="sector-tag" @click="selectSector('新消费')">新消费</span>
+                                <span class="sector-tag" @click="selectSector('可选消费')">可选消费</span>
+                                <span class="sector-tag" @click="selectSector('消费')">消费</span>
+                                <span class="sector-tag" @click="selectSector('家电零部件')">家电零部件</span>
+                                <span class="sector-tag" @click="selectSector('智能家居')">智能家居</span>
+                            </div>
+                            
+                            <h4>金融</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('银行')">银行</span>
+                                <span class="sector-tag" @click="selectSector('证券')">证券</span>
+                                <span class="sector-tag" @click="selectSector('保险')">保险</span>
+                                <span class="sector-tag" @click="selectSector('非银金融')">非银金融</span>
+                                <span class="sector-tag" @click="selectSector('国有大型银行')">国有大型银行</span>
+                                <span class="sector-tag" @click="selectSector('股份制银行')">股份制银行</span>
+                                <span class="sector-tag" @click="selectSector('城商行')">城商行</span>
+                                <span class="sector-tag" @click="selectSector('金融')">金融</span>
+                            </div>
+                            
+                            <h4>能源</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('新能源')">新能源</span>
+                                <span class="sector-tag" @click="selectSector('煤炭')">煤炭</span>
+                                <span class="sector-tag" @click="selectSector('石油石化')">石油石化</span>
+                                <span class="sector-tag" @click="selectSector('电力')">电力</span>
+                                <span class="sector-tag" @click="selectSector('绿色电力')">绿色电力</span>
+                                <span class="sector-tag" @click="selectSector('氢能源')">氢能源</span>
+                                <span class="sector-tag" @click="selectSector('储能')">储能</span>
+                                <span class="sector-tag" @click="selectSector('锂电池')">锂电池</span>
+                                <span class="sector-tag" @click="selectSector('电池')">电池</span>
+                                <span class="sector-tag" @click="selectSector('光伏设备')">光伏设备</span>
+                                <span class="sector-tag" @click="selectSector('风电设备')">风电设备</span>
+                                <span class="sector-tag" @click="selectSector('充电桩')">充电桩</span>
+                                <span class="sector-tag" @click="selectSector('固态电池')">固态电池</span>
+                                <span class="sector-tag" @click="selectSector('能源')">能源</span>
+                                <span class="sector-tag" @click="selectSector('煤炭开采')">煤炭开采</span>
+                                <span class="sector-tag" @click="selectSector('公用事业')">公用事业</span>
+                                <span class="sector-tag" @click="selectSector('锂矿')">锂矿</span>
+                            </div>
+                            
+                            <h4>工业制造</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('机械设备')">机械设备</span>
+                                <span class="sector-tag" @click="selectSector('汽车')">汽车</span>
+                                <span class="sector-tag" @click="selectSector('新能源车')">新能源车</span>
+                                <span class="sector-tag" @click="selectSector('工程机械')">工程机械</span>
+                                <span class="sector-tag" @click="selectSector('高端装备')">高端装备</span>
+                                <span class="sector-tag" @click="selectSector('电力设备')">电力设备</span>
+                                <span class="sector-tag" @click="selectSector('专用设备')">专用设备</span>
+                                <span class="sector-tag" @click="selectSector('通用设备')">通用设备</span>
+                                <span class="sector-tag" @click="selectSector('自动化设备')">自动化设备</span>
+                                <span class="sector-tag" @click="selectSector('机器人')">机器人</span>
+                                <span class="sector-tag" @click="selectSector('人形机器人')">人形机器人</span>
+                                <span class="sector-tag" @click="selectSector('汽车零部件')">汽车零部件</span>
+                                <span class="sector-tag" @click="selectSector('汽车服务')">汽车服务</span>
+                                <span class="sector-tag" @click="selectSector('汽车热管理')">汽车热管理</span>
+                                <span class="sector-tag" @click="selectSector('尾气治理')">尾气治理</span>
+                                <span class="sector-tag" @click="selectSector('特斯拉')">特斯拉</span>
+                                <span class="sector-tag" @click="selectSector('无人驾驶')">无人驾驶</span>
+                                <span class="sector-tag" @click="selectSector('智能驾驶')">智能驾驶</span>
+                                <span class="sector-tag" @click="selectSector('电网设备')">电网设备</span>
+                                <span class="sector-tag" @click="selectSector('电机')">电机</span>
+                                <span class="sector-tag" @click="selectSector('高端制造')">高端制造</span>
+                                <span class="sector-tag" @click="selectSector('工业4.0')">工业4.0</span>
+                                <span class="sector-tag" @click="selectSector('工业互联')">工业互联</span>
+                                <span class="sector-tag" @click="selectSector('低空经济')">低空经济</span>
+                                <span class="sector-tag" @click="selectSector('通用航空')">通用航空</span>
+                            </div>
+                            
+                            <h4>材料</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('有色金属')">有色金属</span>
+                                <span class="sector-tag" @click="selectSector('黄金股')">黄金股</span>
+                                <span class="sector-tag" @click="selectSector('贵金属')">贵金属</span>
+                                <span class="sector-tag" @click="selectSector('基础化工')">基础化工</span>
+                                <span class="sector-tag" @click="selectSector('钢铁')">钢铁</span>
+                                <span class="sector-tag" @click="selectSector('建筑材料')">建筑材料</span>
+                                <span class="sector-tag" @click="selectSector('稀土永磁')">稀土永磁</span>
+                                <span class="sector-tag" @click="selectSector('小金属')">小金属</span>
+                                <span class="sector-tag" @click="selectSector('工业金属')">工业金属</span>
+                                <span class="sector-tag" @click="selectSector('材料')">材料</span>
+                                <span class="sector-tag" @click="selectSector('大宗商品')">大宗商品</span>
+                                <span class="sector-tag" @click="selectSector('资源')">资源</span>
+                            </div>
+                            
+                            <h4>军工</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('国防军工')">国防军工</span>
+                                <span class="sector-tag" @click="selectSector('航天装备')">航天装备</span>
+                                <span class="sector-tag" @click="selectSector('航空装备')">航空装备</span>
+                                <span class="sector-tag" @click="selectSector('航海装备')">航海装备</span>
+                                <span class="sector-tag" @click="selectSector('军工电子')">军工电子</span>
+                                <span class="sector-tag" @click="selectSector('军民融合')">军民融合</span>
+                                <span class="sector-tag" @click="selectSector('商业航天')">商业航天</span>
+                                <span class="sector-tag" @click="selectSector('卫星互联网')">卫星互联网</span>
+                                <span class="sector-tag" @click="selectSector('航母')">航母</span>
+                            </div>
+                            
+                            <h4>基建地产</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('建筑装饰')">建筑装饰</span>
+                                <span class="sector-tag" @click="selectSector('房地产')">房地产</span>
+                                <span class="sector-tag" @click="selectSector('房地产开发')">房地产开发</span>
+                                <span class="sector-tag" @click="selectSector('房地产服务')">房地产服务</span>
+                                <span class="sector-tag" @click="selectSector('交通运输')">交通运输</span>
+                                <span class="sector-tag" @click="selectSector('物流')">物流</span>
+                                <span class="sector-tag" @click="selectSector('航空机场')">航空机场</span>
+                            </div>
+                            
+                            <h4>环保</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('环保')">环保</span>
+                                <span class="sector-tag" @click="selectSector('环保设备')">环保设备</span>
+                                <span class="sector-tag" @click="selectSector('环境治理')">环境治理</span>
+                                <span class="sector-tag" @click="selectSector('垃圾分类')">垃圾分类</span>
+                                <span class="sector-tag" @click="selectSector('碳中和')">碳中和</span>
+                                <span class="sector-tag" @click="selectSector('可控核聚变')">可控核聚变</span>
+                                <span class="sector-tag" @click="selectSector('液冷')">液冷</span>
+                            </div>
+                            
+                            <h4>传媒</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('传媒')">传媒</span>
+                                <span class="sector-tag" @click="selectSector('游戏')">游戏</span>
+                                <span class="sector-tag" @click="selectSector('影视')">影视</span>
+                                <span class="sector-tag" @click="selectSector('元宇宙')">元宇宙</span>
+                                <span class="sector-tag" @click="selectSector('超清视频')">超清视频</span>
+                            </div>
+                            
+                            <h4>主题</h4>
+                            <div class="tags-group">
+                                <span class="sector-tag" @click="selectSector('国企改革')">国企改革</span>
+                                <span class="sector-tag" @click="selectSector('一带一路')">一带一路</span>
+                                <span class="sector-tag" @click="selectSector('中特估')">中特估</span>
+                                <span class="sector-tag" @click="selectSector('中字头')">中字头</span>
+                                <span class="sector-tag" @click="selectSector('并购重组')">并购重组</span>
+                                <span class="sector-tag" @click="selectSector('农牧主题')">农牧主题</span>
+                                <span class="sector-tag" @click="selectSector('农林牧渔')">农林牧渔</span>
+                                <span class="sector-tag" @click="selectSector('养殖业')">养殖业</span>
+                                <span class="sector-tag" @click="selectSector('猪肉')">猪肉</span>
+                                <span class="sector-tag" @click="selectSector('国家安防')">国家安防</span>
+                                <span class="sector-tag" @click="selectSector('安全主题')">安全主题</span>
+                                <span class="sector-tag" @click="selectSector('华为')">华为</span>
+                                <span class="sector-tag" @click="selectSector('新兴产业')">新兴产业</span>
+                                <span class="sector-tag" @click="selectSector('数字孪生')">数字孪生</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 基金列表 -->
+                        <div class="fund-table" v-if="selectedSector">
+                            <h3>板块: {{ selectedSector }}</h3>
+                            <div v-if="sectorLoading" class="loading">
+                                <el-icon class="is-loading"><i class="el-icon-loading"></i></el-icon>
+                                <span>加载中...</span>
+                            </div>
+                            <table v-else style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                                        <th style="padding: 10px; text-align: left;">基金代码</th>
+                                        <th style="padding: 10px; text-align: left;">基金名称</th>
+                                        <th style="padding: 10px; text-align: right;">日涨幅</th>
+                                        <th style="padding: 10px; text-align: right;">近1周</th>
+                                        <th style="padding: 10px; text-align: right;">近1月</th>
+                                        <th style="padding: 10px; text-align: right;">近3月</th>
+                                        <th style="padding: 10px; text-align: right;">近6月</th>
+                                        <th style="padding: 10px; text-align: right;">今年来</th>
+                                        <th style="padding: 10px; text-align: right;">近1年</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #f0f0f0;" v-for="fund in sectorFundsList" :key="fund.fund_code">
+                                        <td style="padding: 10px;">{{ fund.fund_code }}</td>
+                                        <td style="padding: 10px;">{{ fund.fund_name }}</td>
+                                        <td style="padding: 10px; text-align: right;">
+                                            <span :class="fund.day_of_growth && !fund.day_of_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                                {{ fund.day_of_growth }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right;">
+                                            <span :class="fund.weekly_growth && !fund.weekly_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                                {{ fund.weekly_growth }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right;">
+                                            <span :class="fund.monthly_growth_rate && !fund.monthly_growth_rate.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                                {{ fund.monthly_growth_rate }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right;">
+                                            <span :class="fund.quarterly_growth && !fund.quarterly_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                                {{ fund.quarterly_growth }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right;">
+                                            <span :class="fund.half_year_growth && !fund.half_year_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                                {{ fund.half_year_growth }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right;">
+                                            <span :class="fund.year_to_date_growth && !fund.year_to_date_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                                {{ fund.year_to_date_growth }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right;">
+                                            <span :class="fund.yearly_growth && !fund.yearly_growth.includes('-') ? 'profit-positive' : 'profit-negative'">
+                                                {{ fund.yearly_growth }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div v-else class="no-selection">
+                            请选择一个板块查看相关基金
+                        </div>
+                    </div>
+                </el-tab-pane>
+            </el-tabs>
+        </div>
+    </div>
+    
+    <script src="./src/app.js" type="module"></script>
+</body>
+</html>
