@@ -5,11 +5,11 @@
         "is_hold": true,
         "shares": 0,
         "cost_price": 0.0,
-        "hold_amount": 13380.168992646375,
-        "temp_amount": 13380.168992646375,
-        "hold_date": "2026-02-05",
-        "profit_loss": "-563.31",
-        "current_net_value": 1.917
+        "hold_amount": 13401.33,
+        "temp_amount": 13401.33,
+        "hold_date": "2026-02-09",
+        "profit_loss": "+284.11",
+        "current_net_value": 1.8364
     },
     "025209": {
         "fund_key": "20250829000230030000000011113975",
@@ -17,11 +17,11 @@
         "is_hold": true,
         "shares": 0,
         "cost_price": 1.2345,
-        "hold_amount": 7173.318692988249,
-        "temp_amount": 7173.318692988249,
-        "hold_date": "2026-02-05",
-        "profit_loss": "-188.66",
-        "current_net_value": 1.655
+        "hold_amount": 6751.26,
+        "temp_amount": 6751.26,
+        "hold_date": "2026-02-09",
+        "profit_loss": "+185.66",
+        "current_net_value": 1.6041
     },
     "022853": {
         "fund_key": "20241214000230030000000011111149",
@@ -29,16 +29,27 @@
         "is_hold": true,
         "shares": 0,
         "cost_price": 0.0,
-        "hold_amount": 13069.492314365374,
-        "temp_amount": 13069.492314365374,
-        "hold_date": "2026-02-05",
-        "profit_loss": "-107.17",
-        "current_net_value": 1.6503
+        "hold_amount": 6612.84,
+        "temp_amount": 6612.84,
+        "hold_date": "2026-02-09",
+        "profit_loss": "+89.27",
+        "current_net_value": 1.6584
     },
-    "total_hold_amount": 33622.979999999996,
+    "total_hold_amount": 33071.49,
     "temp_hold_amount": 33556.240000000005,
-    "total_profit_loss": -859.1399999999999,
-    "total_valuation": 32763.839999999997,
-    "total_profit_loss_rate": -2.555216700006959,
-    "last_update_date": "2026-02-05"
+    "total_profit_loss": 615.16,
+    "total_valuation": 33686.65,
+    "total_profit_loss_rate": 1.8600915773676965,
+    "last_update_date": "2026-02-09",
+    "002207": {
+        "fund_key": "002207",
+        "fund_name": "前海开源金银珠宝混合C",
+        "is_hold": true,
+        "shares": 0,
+        "cost_price": 0.0,
+        "hold_amount": 6306.06,
+        "temp_amount": 6306.06,
+        "profit_loss": "+56.12",
+        "current_net_value": 3.155
+    }
 }

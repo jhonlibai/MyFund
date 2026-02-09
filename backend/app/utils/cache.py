@@ -17,8 +17,12 @@ class CacheService:
     def __init__(self):
         if not hasattr(self, 'initialized'):
             self.cache_map: Dict[str, Any] = {}
-            self.cache_file = "cache/fund_map.json"
-            self.last_cache_file = "cache/fund_map_last.json"
+            # 使用绝对路径，确保能正确找到缓存文件
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            # 向上三级到项目根目录
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+            self.cache_file = os.path.join(project_root, "cache", "fund_map.json")
+            self.last_cache_file = os.path.join(project_root, "cache", "fund_map_last.json")
             self.ensure_cache_dir()
             self.load_cache()  # 加载缓存数据
             self.initialized = True
@@ -35,15 +39,33 @@ class CacheService:
             try:
                 with open(self.cache_file, "r", encoding="utf-8") as f:
                     self.cache_map = json.load(f)
+                print(f"成功加载缓存文件: {self.cache_file}")
+                print(f"缓存数据: {self.cache_map}")
             except Exception as e:
                 print(f"加载缓存失败: {e}")
                 self.cache_map = {}
+        else:
+            print(f"缓存文件不存在: {self.cache_file}")
+            # 尝试从项目根目录的cache目录加载
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(current_dir))
+            alt_cache_file = os.path.join(project_root, "cache", "fund_map.json")
+            if os.path.exists(alt_cache_file):
+                try:
+                    with open(alt_cache_file, "r", encoding="utf-8") as f:
+                        self.cache_map = json.load(f)
+                    print(f"成功从备用路径加载缓存文件: {alt_cache_file}")
+                    print(f"缓存数据: {self.cache_map}")
+                except Exception as e:
+                    print(f"从备用路径加载缓存失败: {e}")
+                    self.cache_map = {}
     
     def save_cache(self):
         """保存缓存数据"""
         try:
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(self.cache_map, f, ensure_ascii=False, indent=4)
+            print(f"成功保存缓存文件: {self.cache_file}")
         except Exception as e:
             print(f"保存缓存失败: {e}")
     
@@ -73,18 +95,23 @@ class CacheService:
         if os.path.exists(self.last_cache_file):
             try:
                 with open(self.last_cache_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                print(f"成功加载盘后缓存文件: {self.last_cache_file}")
+                print(f"盘后缓存数据: {data}")
+                return data
             except Exception as e:
                 print(f"加载盘后缓存失败: {e}")
                 return {}
-        return {}
+        else:
+            print(f"盘后缓存文件不存在: {self.last_cache_file}")
+            return {}
     
     def save_last_cache(self, data: Dict[str, Any]):
         """保存盘后更新的缓存数据"""
         try:
             with open(self.last_cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
-            print(f"盘后缓存保存成功")
+            print(f"盘后缓存保存成功: {self.last_cache_file}")
         except Exception as e:
             print(f"保存盘后缓存失败: {e}")
     
